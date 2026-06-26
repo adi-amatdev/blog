@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import { writeFile } from 'fs/promises';
-import path from 'path';
-import { randomUUID } from 'crypto';
+import { uploadFile, getFileUrl } from '@/lib/s3';
 
 export async function POST(request: Request) {
   try {
@@ -16,14 +14,12 @@ export async function POST(request: Request) {
     const buffer = Buffer.from(bytes);
 
     const ext = file.name.split('.').pop() || 'png';
-    const filename = `${randomUUID()}.${ext}`;
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
-    const filepath = path.join(uploadDir, filename);
+    const filename = `${file.name}`;
+    const key = await uploadFile(buffer, filename, file.type);
 
-    await writeFile(filepath, buffer);
-
-    return NextResponse.json({ url: `/uploads/${filename}` });
-  } catch {
-    return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
+    return NextResponse.json({ url: getFileUrl(key) });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : 'Upload failed';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

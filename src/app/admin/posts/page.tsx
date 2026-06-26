@@ -3,12 +3,12 @@ import Link from 'next/link';
 import { PlusCircle, Pencil, Trash2 } from 'lucide-react';
 import { DeleteButton } from './DeleteButton';
 
-export default function AdminPostsPage() {
-  const posts = getAllPosts();
+export default async function AdminPostsPage() {
+  const posts = await getAllPosts();
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-12">
-      <div className="flex items-center justify-between mb-8">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-12">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <h1 className="text-2xl font-bold tracking-tight">Posts</h1>
         <Link
           href="/admin/posts/new"
@@ -22,12 +22,12 @@ export default function AdminPostsPage() {
       {posts.length > 0 ? (
         <div className="space-y-2">
           {posts.map(post => (
-            <div key={post.slug} className="flex items-center justify-between p-3 border border-border rounded-lg">
-              <Link href={`/admin/posts/${post.slug}`} className="flex-1 hover:text-accent transition-colors">
-                <div className="font-medium">{post.title}</div>
+            <div key={post.slug} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 border border-border rounded-lg">
+              <Link href={`/admin/posts/${post.slug}`} className="flex-1 hover:text-accent transition-colors min-w-0">
+                <div className="font-medium truncate">{post.title}</div>
                 <div className="text-sm text-muted">{new Date(post.published).toLocaleDateString()}</div>
               </Link>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 self-end sm:self-auto">
                 <Link
                   href={`/admin/posts/${post.slug}`}
                   className="p-2 rounded-lg hover:bg-stone-200 dark:hover:bg-stone-800 text-muted transition-colors"

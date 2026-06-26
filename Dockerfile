@@ -2,12 +2,17 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm ci
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .env* ./
+RUN pnpm install --frozen-lockfile
+
+COPY prisma ./prisma
+RUN npx prisma generate
 
 COPY . .
 ENV NEXT_STANDALONE=true
-RUN npm run build
+RUN pnpm build
 
 # Stage 2: Runtime
 FROM node:20-alpine AS runner
@@ -19,10 +24,9 @@ RUN addgroup --system --gid 1001 nodejs && \
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/content ./content
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
-RUN mkdir -p /app/public/uploads && \
-    chown -R nextjs:nodejs /app
+RUN chown -R nextjs:nodejs /app
 
 USER nextjs
 

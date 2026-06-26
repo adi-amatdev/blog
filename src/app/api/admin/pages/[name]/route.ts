@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server';
-import { readFileSafe, writeFileSafe, getContentPath } from '@/lib/utils';
+import { prisma } from '@/lib/db';
 
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ name: string }> }
 ) {
   const { name } = await params;
-  const filePath = getContentPath('pages', `${name}.md`);
-  const content = readFileSafe(filePath) || '';
-  return NextResponse.json({ content });
+  const setting = await prisma.siteSetting.findUnique({ where: { key: `page_${name}` } });
+  return NextResponse.json({ content: setting?.value || '' });
 }
 
 export async function PUT(
@@ -17,7 +16,10 @@ export async function PUT(
 ) {
   const { name } = await params;
   const { content } = await request.json();
-  const filePath = getContentPath('pages', `${name}.md`);
-  const ok = writeFileSafe(filePath, content);
-  return NextResponse.json({ ok });
+  await prisma.siteSetting.upsert({
+    where: { key: `page_${name}` },
+    create: { key: `page_${name}`, value: content },
+    update: { value: content },
+  });
+  return NextResponse.json({ ok: true });
 }

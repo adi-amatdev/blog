@@ -1,9 +1,9 @@
 import { revalidatePath } from 'next/cache';
 import { NextResponse } from 'next/server';
-import { getAllPosts, createPost, getPost, savePost, deletePost } from '@/lib/posts';
+import { getAllPosts, createPost, savePost } from '@/lib/posts';
 
 export async function GET() {
-  const posts = getAllPosts();
+  const posts = await getAllPosts();
   return NextResponse.json(posts);
 }
 
@@ -14,7 +14,7 @@ export async function POST(request: Request) {
   }
 
   const slug = createPost(title, categories || []);
-  savePost(slug, {
+  await savePost(slug, {
     title,
     description: description || '',
     published: new Date().toISOString().split('T')[0],

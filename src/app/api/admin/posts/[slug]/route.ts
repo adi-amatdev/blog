@@ -7,7 +7,7 @@ export async function GET(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params;
-  const post = getPost(slug);
+  const post = await getPost(slug);
   if (!post) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
@@ -21,12 +21,12 @@ export async function PUT(
   const { slug } = await params;
   const { title, description, categories, content } = await request.json();
 
-  const existing = getPost(slug);
+  const existing = await getPost(slug);
   if (!existing) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  savePost(slug, {
+  await savePost(slug, {
     title: title || existing.title,
     description: description ?? existing.description,
     published: existing.published,
@@ -45,7 +45,7 @@ export async function DELETE(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params;
-  deletePost(slug);
+  await deletePost(slug);
   revalidatePath('/');
   revalidatePath('/categories');
   return NextResponse.json({ ok: true });

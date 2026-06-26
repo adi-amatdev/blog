@@ -45,8 +45,8 @@ export default function NewPostPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-12">
-      <div className="flex items-center justify-between mb-8">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-12">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <h1 className="text-2xl font-bold tracking-tight">New Post</h1>
         <button
           onClick={handleSave}
@@ -68,7 +68,7 @@ export default function NewPostPage() {
             placeholder="Post title"
           />
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium mb-1">Categories (comma-separated)</label>
             <input

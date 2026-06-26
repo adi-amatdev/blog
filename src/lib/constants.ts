@@ -14,7 +14,7 @@ export const SESSION_OPTIONS = {
 };
 
 export const SOCIAL_LINKS = {
-  github: process.env.GITHUB_URL || 'https://github.com/aadi',
-  twitter: process.env.TWITTER_URL || 'https://x.com/aadi',
-  linkedin: process.env.LINKEDIN_URL || 'https://linkedin.com/in/aadi',
+  github: 'https://github.com/adi-amatdev',
+  twitter: 'https://x.com/AcharyasBytes',
+  linkedin: 'https://www.linkedin.com/in/aaditya-acharya',
 };

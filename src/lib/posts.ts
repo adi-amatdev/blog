@@ -1,7 +1,5 @@
-import fs from 'fs';
-import path from 'path';
-import matter from 'gray-matter';
-import { getContentPath, slugify } from './utils';
+import { prisma } from './db';
+import { slugify } from './utils';
 
 export interface PostMeta {
   slug: string;
@@ -13,86 +11,122 @@ export interface PostMeta {
 
 export interface Post extends PostMeta {
   content: string;
+  bannerImage?: string;
 }
 
-export function getAllPosts(): PostMeta[] {
-  const postsDir = getContentPath('posts');
-  if (!fs.existsSync(postsDir)) return [];
-
-  const slugs = fs.readdirSync(postsDir, { withFileTypes: true })
-    .filter(d => d.isDirectory())
-    .map(d => d.name);
-
-  return slugs
-    .map(slug => getPostMeta(slug))
-    .filter((p): p is PostMeta => p !== null)
-    .sort((a, b) => new Date(b.published).getTime() - new Date(a.published).getTime());
+function toMeta(post: {
+  slug: string;
+  title: string;
+  published: Date;
+  description: string | null;
+  categories: { category: { name: string } }[];
+}): PostMeta {
+  return {
+    slug: post.slug,
+    title: post.title,
+    published: post.published.toISOString().split('T')[0],
+    categories: post.categories.map(pc => pc.category.name),
+    description: post.description || undefined,
+  };
 }
 
-export function getAllPostSlugs(): string[] {
-  const postsDir = getContentPath('posts');
-  if (!fs.existsSync(postsDir)) return [];
-  return fs.readdirSync(postsDir, { withFileTypes: true })
-    .filter(d => d.isDirectory())
-    .map(d => d.name);
-}
-
-export function getPostMeta(slug: string): PostMeta | null {
+export async function getAllPosts(): Promise<PostMeta[]> {
   try {
-    const filePath = getContentPath('posts', slug, 'index.md');
-    if (!fs.existsSync(filePath)) return null;
-    const source = fs.readFileSync(filePath, 'utf-8');
-    const { data } = matter(source);
-    return {
-      slug,
-      title: data.title || slug,
-      published: data.published || '',
-      categories: data.categories || [],
-      description: data.description || '',
-    };
+    const posts = await prisma.post.findMany({
+      orderBy: { published: 'desc' },
+      include: { categories: { include: { category: true } } },
+    });
+    return posts.map(toMeta);
+  } catch {
+    return [];
+  }
+}
+
+export async function getAllPostSlugs(): Promise<string[]> {
+  try {
+    const posts = await prisma.post.findMany({ select: { slug: true } });
+    return posts.map(p => p.slug);
+  } catch {
+    return [];
+  }
+}
+
+export async function getPostMeta(slug: string): Promise<PostMeta | null> {
+  try {
+    const post = await prisma.post.findUnique({
+      where: { slug },
+      include: { categories: { include: { category: true } } },
+    });
+    if (!post) return null;
+    return toMeta(post);
   } catch {
     return null;
   }
 }
 
-export function getPost(slug: string): Post | null {
+export async function getPost(slug: string): Promise<Post | null> {
   try {
-    const filePath = getContentPath('posts', slug, 'index.md');
-    if (!fs.existsSync(filePath)) return null;
-    const source = fs.readFileSync(filePath, 'utf-8');
-    const { data, content } = matter(source);
-    return {
-      slug,
-      title: data.title || slug,
-      published: data.published || '',
-      categories: data.categories || [],
-      description: data.description || '',
-      content,
-    };
+    const post = await prisma.post.findUnique({
+      where: { slug },
+      include: { categories: { include: { category: true } } },
+    });
+    if (!post) return null;
+    return { ...toMeta(post), content: post.content, bannerImage: post.bannerImage || undefined };
   } catch {
     return null;
   }
 }
 
-export function savePost(slug: string, frontmatter: Record<string, unknown>, content: string) {
-  const dir = getContentPath('posts', slug);
-  fs.mkdirSync(dir, { recursive: true });
-  const filePath = path.join(dir, 'index.md');
-  const matterString = matter.stringify(content, frontmatter);
-  fs.writeFileSync(filePath, matterString, 'utf-8');
+export async function savePost(
+  slug: string,
+  frontmatter: { title: string; description?: string; published: string; categories: string[] },
+  content: string,
+  bannerImage?: string,
+) {
+  const { title, description, published, categories } = frontmatter;
+  await prisma.$transaction(async (tx) => {
+    await tx.post.upsert({
+      where: { slug },
+      create: {
+        slug,
+        title,
+        description: description || '',
+        content,
+        published: new Date(published),
+        bannerImage: bannerImage || null,
+      },
+      update: {
+        title,
+        description: description || '',
+        content,
+        published: new Date(published),
+        bannerImage: bannerImage || undefined,
+      },
+    });
+
+    await tx.postCategory.deleteMany({ where: { post: { slug } } });
+
+    for (const name of categories) {
+      const category = await tx.category.upsert({
+        where: { name },
+        create: { name },
+        update: {},
+      });
+      await tx.postCategory.create({
+        data: { postId: (await tx.post.findUniqueOrThrow({ where: { slug }, select: { id: true } })).id, categoryId: category.id },
+      });
+    }
+  });
 }
 
-export function deletePost(slug: string) {
-  const dir = getContentPath('posts', slug);
-  if (fs.existsSync(dir)) {
-    fs.rmSync(dir, { recursive: true });
+export async function deletePost(slug: string) {
+  try {
+    await prisma.post.delete({ where: { slug } });
+  } catch {
+    // post might not exist
   }
 }
 
 export function createPost(title: string, categories: string[]): string {
-  const slug = slugify(title);
-  const published = new Date().toISOString().split('T')[0];
-  const frontmatter = { title, published, categories, description: '' };
-  savePost(slug, frontmatter, '# ' + title + '\n\nStart writing...');
-  return slug;
+  return slugify(title);
 }

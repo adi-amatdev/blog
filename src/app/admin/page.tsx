@@ -3,13 +3,13 @@ import { getAllCategories } from '@/lib/categories';
 import Link from 'next/link';
 import { FileText, FolderOpen, PlusCircle } from 'lucide-react';
 
-export default function AdminDashboard() {
-  const posts = getAllPosts();
-  const categories = getAllCategories();
+export default async function AdminDashboard() {
+  const posts = await getAllPosts();
+  const categories = await getAllCategories();
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-12">
-      <div className="flex items-center justify-between mb-8">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-12">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
         <Link
           href="/admin/posts/new"
@@ -44,10 +44,10 @@ export default function AdminDashboard() {
             <Link
               key={post.slug}
               href={`/admin/posts/${post.slug}`}
-              className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-stone-50 dark:hover:bg-stone-900 transition-colors"
+              className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 p-3 border border-border rounded-lg hover:bg-stone-50 dark:hover:bg-stone-900 transition-colors"
             >
-              <span className="font-medium">{post.title}</span>
-              <span className="text-sm text-muted">{new Date(post.published).toLocaleDateString()}</span>
+              <span className="font-medium truncate">{post.title}</span>
+              <span className="text-sm text-muted shrink-0">{new Date(post.published).toLocaleDateString()}</span>
             </Link>
           ))}
         </div>
