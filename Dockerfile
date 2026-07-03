@@ -5,7 +5,7 @@ WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json prisma .env* ./
-RUN pnpm install --frozen-lockfile
+RUN pnpm install
 
 COPY . .
 ENV NEXT_STANDALONE=true
