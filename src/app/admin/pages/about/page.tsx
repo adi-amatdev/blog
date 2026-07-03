@@ -1,14 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useRef } from 'react';
 import { TipTapEditor } from '@/components/editor/TipTapEditor';
+import { ImageCropModal } from '@/components/ImageCropModal';
+import { compressToWebp } from '@/lib/image';
 import TurndownService from 'turndown';
 import { unified } from 'unified';
 import remarkParse from 'remark-parse';
 import remarkRehype from 'remark-rehype';
 import rehypeStringify from 'rehype-stringify';
-import { Upload } from 'lucide-react';
+import { Upload, Trash2, Loader2 } from 'lucide-react';
 
 const turndown = new TurndownService({
   headingStyle: 'atx',
@@ -26,7 +27,6 @@ async function markdownToHtml(md: string): Promise<string> {
 }
 
 export default function EditAboutPage() {
-  const router = useRouter();
   const [content, setContent] = useState('');
   const [html, setHtml] = useState('');
   const [profileImage, setProfileImage] = useState('');
@@ -34,6 +34,9 @@ export default function EditAboutPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [deletingImage, setDeletingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     async function load() {
@@ -85,8 +88,10 @@ export default function EditAboutPage() {
     if (!file) return;
 
     setUploadingImage(true);
+
+    const compressed = await compressToWebp(file, 800, 0.85);
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('file', compressed, 'profile.webp');
 
     const res = await fetch('/api/admin/upload', { method: 'POST', body: formData });
     if (res.ok) {
@@ -94,6 +99,30 @@ export default function EditAboutPage() {
       setProfileImage(data.url);
     }
     setUploadingImage(false);
+  }
+
+  async function handleCrop(blob: Blob) {
+    const compressed = await compressToWebp(blob, 800, 0.85);
+    const formData = new FormData();
+    formData.append('file', compressed, 'profile.webp');
+
+    const res = await fetch('/api/admin/upload', { method: 'POST', body: formData });
+    if (res.ok) {
+      const data = await res.json();
+      setProfileImage(data.url);
+    }
+    setCropSrc(null);
+  }
+
+  async function handleDeleteImage() {
+    setDeletingImage(true);
+    setProfileImage('');
+    await fetch('/api/admin/pages/profile_image', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: '' }),
+    });
+    setDeletingImage(false);
   }
 
   if (loading) {
@@ -117,16 +146,36 @@ export default function EditAboutPage() {
         <h2 className="text-sm font-semibold mb-3">Profile Image</h2>
         <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
           {profileImage && (
-            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden ring-2 ring-accent ring-offset-2 ring-offset-background flex-shrink-0">
+            <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden ring-2 ring-accent ring-offset-2 ring-offset-background flex-shrink-0 group">
               <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
+              <button
+                onClick={handleDeleteImage}
+                disabled={deletingImage}
+                className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-full"
+                title="Remove profile image"
+              >
+                {deletingImage ? (
+                  <Loader2 size={18} className="text-white animate-spin" />
+                ) : (
+                  <Trash2 size={18} className="text-white" />
+                )}
+              </button>
             </div>
           )}
           <div className="flex-1 w-full sm:w-auto">
-            <label className="inline-flex items-center gap-2 px-4 py-2 border border-border rounded-lg cursor-pointer hover:bg-stone-50 dark:hover:bg-stone-900 transition-colors text-sm">
-              <Upload size={16} />
-              {uploadingImage ? 'Uploading...' : 'Upload image'}
-              <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-            </label>
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="inline-flex items-center gap-2 px-4 py-2 border border-border rounded-lg cursor-pointer hover:bg-stone-50 dark:hover:bg-stone-900 transition-colors text-sm">
+                <Upload size={16} />
+                {uploadingImage ? 'Compressing...' : 'Upload image'}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+              </label>
+            </div>
             <input
               type="text"
               value={profileImage}
@@ -143,6 +192,17 @@ export default function EditAboutPage() {
         onChange={setHtml}
         placeholder="Write about yourself..."
       />
+
+      {cropSrc && (
+        <ImageCropModal
+          src={cropSrc}
+          onCrop={handleCrop}
+          onClose={() => {
+            setCropSrc(null);
+            URL.revokeObjectURL(cropSrc);
+          }}
+        />
+      )}
     </div>
   );
 }

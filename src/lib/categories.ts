@@ -40,3 +40,10 @@ export async function getCategoryPosts(slug: string): Promise<PostMeta[]> {
   const cat = categories.find(c => c.name === slug);
   return cat?.posts || [];
 }
+
+export function paginate<T>(items: T[], page: number, perPage: number): { items: T[]; totalPages: number } {
+  const totalPages = Math.max(1, Math.ceil(items.length / perPage));
+  const safePage = Math.min(page, totalPages);
+  const start = (safePage - 1) * perPage;
+  return { items: items.slice(start, start + perPage), totalPages };
+}

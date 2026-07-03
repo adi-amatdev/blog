@@ -1,6 +1,7 @@
 import { getAllPosts } from '@/lib/posts';
 import { getAllCategories } from '@/lib/categories';
 import Link from 'next/link';
+import { AdminCategoryList } from '@/components/AdminCategoryList';
 import { FileText, FolderOpen, PlusCircle } from 'lucide-react';
 
 export default async function AdminDashboard() {
@@ -39,7 +40,7 @@ export default async function AdminDashboard() {
 
       <h2 className="text-lg font-semibold mb-4">Recent Posts</h2>
       {posts.length > 0 ? (
-        <div className="space-y-2">
+        <div className="space-y-2 mb-10">
           {posts.slice(0, 5).map(post => (
             <Link
               key={post.slug}
@@ -52,8 +53,13 @@ export default async function AdminDashboard() {
           ))}
         </div>
       ) : (
-        <p className="text-muted text-sm">No posts yet. Create your first post!</p>
+        <p className="text-muted text-sm mb-10">No posts yet. Create your first post!</p>
       )}
+
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold">Categories</h2>
+      </div>
+      <AdminCategoryList categories={categories} />
     </div>
   );
 }

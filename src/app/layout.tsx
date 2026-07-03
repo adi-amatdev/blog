@@ -35,7 +35,7 @@ export default function RootLayout({
       <body className="bg-background text-foreground font-sans antialiased min-h-screen flex flex-col">
         <Providers>
           <Header />
-          <main className="flex-1">{children}</main>
+          <main className="flex-1 animate-fade-up">{children}</main>
           <Footer />
         </Providers>
       </body>

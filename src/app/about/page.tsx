@@ -16,11 +16,15 @@ export default async function AboutPage() {
   const profileImage = imageSetting?.value || '';
 
   return (
-    <div className="mx-auto max-w-2xl px-4 sm:px-6 py-12">
+    <div className="mx-auto max-w-xl px-4 sm:px-6 py-12">
       {profileImage && (
-        <div className="flex justify-center mb-8">
-          <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden ring-2 ring-accent ring-offset-4 ring-offset-background shadow-lg">
+        <div className="flex flex-col items-center mb-8">
+          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden ring-2 ring-accent ring-offset-2 ring-offset-background shadow-lg">
             <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
+          </div>
+          <div className="mt-4 text-center text-sm text-muted leading-relaxed max-w-xs">
+            Building things .   Breaking them<br />
+          Learning why they work
           </div>
         </div>
       )}

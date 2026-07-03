@@ -1,5 +1,5 @@
 export const SITE_NAME = "Aadi's Intelligence";
-export const SITE_DESCRIPTION = "Software engineering, systems programming, and low-level internals.";
+export const SITE_DESCRIPTION = process.env.SITE_DESCRIPTION || "Building things. Breaking them. Learning why they work.";
 export const SITE_URL = process.env.SITE_URL || 'http://home.local';
 export const CONTENT_DIR = process.env.CONTENT_DIR || 'content';
 

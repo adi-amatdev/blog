@@ -42,6 +42,13 @@ export async function getAllPosts(): Promise<PostMeta[]> {
   }
 }
 
+export function paginatePosts<T>(items: T[], page: number, perPage: number): { items: T[]; totalPages: number } {
+  const totalPages = Math.max(1, Math.ceil(items.length / perPage));
+  const safePage = Math.min(page, totalPages);
+  const start = (safePage - 1) * perPage;
+  return { items: items.slice(start, start + perPage), totalPages };
+}
+
 export async function getAllPostSlugs(): Promise<string[]> {
   try {
     const posts = await prisma.post.findMany({ select: { slug: true } });

@@ -1,7 +1,6 @@
 import { notFound } from 'next/navigation';
 import { getPost, getAllPostSlugs } from '@/lib/posts';
 import { MarkdownRenderer } from '@/components/MarkdownRenderer';
-import { LikeShare } from '@/components/LikeShare';
 import { formatDate } from '@/lib/utils';
 import type { Metadata } from 'next';
 
@@ -47,7 +46,6 @@ export default async function PostPage({ params }: Props) {
         </div>
       </header>
       <MarkdownRenderer content={post.content} />
-      <LikeShare postSlug={post.slug} postTitle={post.title} />
     </article>
   );
 }
