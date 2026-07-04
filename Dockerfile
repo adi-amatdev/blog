@@ -2,10 +2,10 @@
 FROM node:22-alpine AS builder
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@10.18.3 --activate
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json prisma .env* ./
-RUN pnpm approve-builds --all 2>/dev/null; pnpm install
+RUN pnpm install --frozen-lockfile
 
 COPY . .
 ENV NEXT_STANDALONE=true
@@ -21,7 +21,6 @@ RUN addgroup --system --gid 1001 nodejs && \
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
 RUN chown -R nextjs:nodejs /app
 
